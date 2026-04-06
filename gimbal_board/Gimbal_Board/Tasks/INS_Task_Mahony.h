@@ -32,7 +32,7 @@
 #include "bmi088driver.h"
 #include "pid.h"
 
-#define IMU_Temp_Set 25
+#define IMU_Temp_Set 35
 
 #define SPI_DMA_GYRO_LENGHT       8
 #define SPI_DMA_ACCEL_LENGHT      9

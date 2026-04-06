@@ -62,6 +62,7 @@ static void NUC_Data_Solve_Lost(void)
     if (toe_is_error(NUC_DATA_TOE))
     {
         memset(&NUC_Data_Receive, 0, sizeof(NUC_Data_Receive));
+        NUC_Data_Receive.chassis_mode = 2; //设为陀螺模式
     }
 }
 

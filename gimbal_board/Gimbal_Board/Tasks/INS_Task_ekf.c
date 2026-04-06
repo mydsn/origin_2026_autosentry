@@ -134,7 +134,7 @@ static void INS_init(void)
     const fp32 imu_temp_PID[3] = {TEMPERATURE_PID_KP, TEMPERATURE_PID_KI, TEMPERATURE_PID_KD};
     PID_init(&INS.imu_temp_pid, PID_POSITION, imu_temp_PID, TEMPERATURE_PID_MAX_OUT, TEMPERATURE_PID_MAX_IOUT);
 
-    IMU_QuaternionEKF_Init(10, 0.001, 10000000, 1.0, 0); // 初始化卡尔曼滤波
+    IMU_QuaternionEKF_Init(10, 0.0001, 10000000, 1.0, 0); // 初始化卡尔曼滤波
 
     DWT_Init(CPU_FREQ_MHZ); // 启动DWT，用于高精度计时
 

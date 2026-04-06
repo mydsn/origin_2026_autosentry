@@ -33,7 +33,7 @@ shoot_control_t shoot_control = {
 	.fric_ready = FALSE,
 	.fric_start = FALSE,
 	.dial_over_temperatue = FALSE,
-	.fric_target_rpm = 6050,
+	.fric_target_rpm = 5900,
 	.cooling_limit_cnt = 0};
 /*****************************************************************根据裁判系统发射数据进行弹速闭环********************************************************************************/
 #define DEBUG_MODE 0 //日常调试1，比赛前改0
@@ -44,7 +44,7 @@ shoot_control_t shoot_control = {
 
 #if USE_REFEREE_BULLET_SPEED_LOOP == 1
 // 弹速控制参数
-#define TARGET_BULLET_SPEED 23.0f // 目标弹速
+#define TARGET_BULLET_SPEED 22.9f // 目标弹速
 #define MIN_ADJUST_STEP 10		  // 弹速很接近目标弹速时每次调整的转速步长
 #define MIDDLE_ADJUST_STEP 20	  // 弹速较为接近目标弹速时每次调整的转速步长
 #define MAX_ADJUST_STEP 40		  // 弹速距离目标弹速偏差较大时每次调整的转速步长
@@ -222,7 +222,7 @@ void Dial_Speed_Set(fp32 *dial_speed)
 #if HAVE_REFEREE_SYSTEM
 	if ((rc_ctrl.rc.s[1] == RC_SW_UP || (NUC_Data_Receive.small_yaw_aim != 0) || (rc_ctrl.rc.s[1] == RC_SW_MID && rc_ctrl.rc.s[0] == RC_SW_UP)) && Game_Robot_State.power_management_shooter_output == 0x01) // 判断是否要进行热量保护,快超热量了就把拨弹盘目标速度定为0一段时间
 	{
-		if ((Power_Heat_Data.shooter_17mm_barrel_heat >= (Game_Robot_State.shooter_barrel_heat_limit - 50)))
+		if ((Power_Heat_Data.shooter_17mm_barrel_heat >= (Game_Robot_State.shooter_barrel_heat_limit - 60)))
 		{
 			shoot_control.need_limit_heat = 1;
 		}
@@ -303,9 +303,9 @@ void Dial_Motor_Control(void)
 			dial_back_flag = 1;
 			back_start_time = xTaskGetTickCount();
 			if (LK_dial_motor.give_current < 0)
-				LK_dial_motor.give_current = 1500;
+				LK_dial_motor.give_current = 1200;
 			else
-				LK_dial_motor.give_current = -1500;
+				LK_dial_motor.give_current = -1200;
 
 			return;
 		}

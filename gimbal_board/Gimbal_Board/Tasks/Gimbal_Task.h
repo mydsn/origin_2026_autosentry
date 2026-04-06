@@ -12,7 +12,7 @@
 #define RAD_TO_DEGREE 57.295779f
 #define GM6020_ENC_TO_DEGREE 0.043945f //  360/8192
 /****************************************重力补偿参数*******************************************************/
-#define PITCH_MOTOR_GRAVITY_STATIC_COMPENSATE (5100) // 用于补偿重力，pitch轴质心与转轴的连线与地面平行时抵消重力所需的力矩，单位是发给6020电机的目标电流
+#define PITCH_MOTOR_GRAVITY_STATIC_COMPENSATE (5300) // 用于补偿重力，pitch轴质心与转轴的连线与地面平行时抵消重力所需的力矩，单位是发给6020电机的目标电流
 #define PITCH_CENTROID_OFFSET_ANGLE -55.28313f // 补偿pitch的INS_angle
 /**************************************************PID,前馈系数************************************************************************/
 #define BIG_YAW_MOTOR_SPEED_PID_KP 0.12f
@@ -56,14 +56,14 @@
 #define SMALL_YAW_MOTOR_RC_SPEED_PID_KI 0.01f
 #define SMALL_YAW_MOTOR_RC_SPEED_PID_KD 15.0f
 
-#define SMALL_YAW_MOTOR_SPEED_PID_MAX_OUT 15000.0f
+#define SMALL_YAW_MOTOR_SPEED_PID_MAX_OUT 16000.0f
 #define SMALL_YAW_MOTOR_SPEED_PID_MAX_IOUT 3000.0f
 #define SMALL_YAW_MOTOR_SPEED_FF 20.0f  //8
-#define SMALL_YAW_MOTOR_CURRENT_FF 60.0f //40
+#define SMALL_YAW_MOTOR_CURRENT_FF 70.0f //40
 
-#define SMALL_YAW_MOTOR_ANGLE_PID_KP 20.0f //20
+#define SMALL_YAW_MOTOR_ANGLE_PID_KP 25.0f //20
 #define SMALL_YAW_MOTOR_ANGLE_PID_KI 0.0f
-#define SMALL_YAW_MOTOR_ANGLE_PID_KD 20.0f  //20
+#define SMALL_YAW_MOTOR_ANGLE_PID_KD 25.0f  //20
 #define SMALL_YAW_MOTOR_ANGLE_PID_MAX_OUT 2000.0f
 #define SMALL_YAW_MOTOR_ANGLE_PID_MAX_IOUT 100.0f
 
@@ -73,39 +73,39 @@
 #define SMALL_YAW_MOTOR_AUTO_AIM_PID_MAX_OUT 2000.0f
 #define SMALL_YAW_MOTOR_AUTO_AIM_PID_MAX_IOUT 70.0f
 
-#define PITCH_MOTOR_SPEED_PID_KP 180.0f
-#define PITCH_MOTOR_SPEED_PID_KI 0.003f
-#define PITCH_MOTOR_SPEED_PID_KD 10.0f
+#define PITCH_MOTOR_SPEED_PID_KP 190.0f
+#define PITCH_MOTOR_SPEED_PID_KI 0.0008f
+#define PITCH_MOTOR_SPEED_PID_KD 12.0f
 #define PITCH_MOTOR_SPEED_PID_MAX_OUT 16000.0f
-#define PITCH_MOTOR_SPEED_PID_MAX_IOUT 200.0f
-#define PITCH_MOTOR_SPEED_FF 1.0f
-#define PITCH_MOTOR_CURRENT_FF 6.0f
+#define PITCH_MOTOR_SPEED_PID_MAX_IOUT 100.0f
+#define PITCH_MOTOR_SPEED_FF 5.0f
+#define PITCH_MOTOR_CURRENT_FF 10.0f
 
-#define PITCH_MOTOR_ANGLE_PID_KP 25.0f // 0.2f
+#define PITCH_MOTOR_ANGLE_PID_KP 30.0f // 0.2f
 #define PITCH_MOTOR_ANGLE_PID_KI 0.0f
 #define PITCH_MOTOR_ANGLE_PID_KD 25.0f // 3.0f
 #define PITCH_MOTOR_ANGLE_PID_MAX_OUT 2000.0f
 #define PITCH_MOTOR_ANGLE_PID_MAX_IOUT 0.0f
 
-#define PITCH_MOTOR_AUTO_AIM_PID_KP 25.0f
+#define PITCH_MOTOR_AUTO_AIM_PID_KP 30.0f
 #define PITCH_MOTOR_AUTO_AIM_PID_KI 0.0f // 0.0005f
-#define PITCH_MOTOR_AUTO_AIM_PID_KD 30.0f
+#define PITCH_MOTOR_AUTO_AIM_PID_KD 25.0f
 #define PITCH_MOTOR_AUTO_AIM_PID_MAX_OUT 2000.0f
 #define PITCH_MOTOR_AUTO_AIM_PID_MAX_IOUT 0.0f
 /****************************************云台零点，限位，电机运动参数*******************************************************/
-#define SMALL_YAW_MIDDLE_ENC_ZERO 3605 // 小yaw轴中间位置编码器值，作为大yaw轴跟随小yaw轴时的参考零点
+#define SMALL_YAW_MIDDLE_ENC_ZERO 6009 // 小yaw轴中间位置编码器值，作为大yaw轴跟随小yaw轴时的参考零点
 
-#define SMALL_YAW_NAV_SEEK_ECD_MAX 4255 //导航索敌模式搜索角度最大值,为小yaw电机编码器值
-#define SMALL_YAW_NAV_SEEK_ECD_MIN 2955 //导航索敌模式搜索角度最小值，为小yaw电机编码器值减去8192（跟安装位置有关，索敌时电机活动范围越过编码器零点了）
+#define SMALL_YAW_NAV_SEEK_ECD_MAX 6650 //导航索敌模式搜索角度最大值,为小yaw电机编码器值
+#define SMALL_YAW_NAV_SEEK_ECD_MIN 5400 //导航索敌模式搜索角度最小值，为小yaw电机编码器值减去8192（跟安装位置有关，索敌时电机活动范围越过编码器零点了）
 #define SMALL_YAW_NAV_SEEK_STEP 0.16 //导航索敌模式下小yaw轴每次调整的角度步进，单位：度
 // 6629 4922
 #define SMALL_YAW_AUTOAIM_ECD_MAX 5561
 #define SMALL_YAW_AUTOAIM_ECD_MIN 4365
 
-#define PITCH_ECD_ANGLE_MAX (7100 * GM6020_ENC_TO_DEGREE) // pitch轴电子限位最大角度，用编码器值标定 1780
-#define PITCH_ECD_ANGLE_MIN (6000 * GM6020_ENC_TO_DEGREE) // pitch轴电子限位最小角度，用编码器值标定 530
+#define PITCH_ECD_ANGLE_MAX (4350 * GM6020_ENC_TO_DEGREE) // pitch轴电子限位最大角度，用编码器值标定 1780
+#define PITCH_ECD_ANGLE_MIN (3200 * GM6020_ENC_TO_DEGREE) // pitch轴电子限位最小角度，用编码器值标定 530
 
-#define PITCH_NAV_SEEK_ENEMY_ANGLE_MAX 8.0f 
+#define PITCH_NAV_SEEK_ENEMY_ANGLE_MAX 4.0f 
 #define PITCH_NAV_SEEK_ENEMY_ANGLE_MIN -20.0f 
 #define PITCH_NAV_SEEK_ENEMY_STEP 0.12f 
 #define PITCH_NAV_SEEK_OUTPOST_ANGLE_MAX 15.0f  

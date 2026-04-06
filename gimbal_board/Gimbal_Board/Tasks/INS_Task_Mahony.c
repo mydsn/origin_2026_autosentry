@@ -217,8 +217,8 @@ void INS_Task(void const *pvParameters)
 
     imu_start_dma_flag = 1;
 
-    bmi088_offset_data.gyro[0] = 0.0001886f;
-    bmi088_offset_data.gyro[1] = 0.003763;
+    bmi088_offset_data.gyro[0] = 0.00020520f;
+    bmi088_offset_data.gyro[1] = 0.003640f;
     bmi088_offset_data.gyro[2] = 0.002905f;
     //    mpu_offset_clc();
 
@@ -336,14 +336,16 @@ static void imu_cali_slove(fp32 gyro[3], fp32 accel[3], fp32 mag[3], bmi088_real
   * @retval         none
   */
 /**
-  * @brief          控制bmi088的温度
-  * @param[in]      temp:bmi088的温度
-  * @retval         none
-  */
+ * @brief          控制bmi088的温度
+ * @param[in]      temp:bmi088的温度
+ * @retval         none
+ */
 static void imu_temp_control(fp32 temp)
 {
     uint16_t tempPWM;
     static uint8_t temp_constant_time = 0;
+    static uint8_t first_temperate = 0;
+
     if (first_temperate)
     {
         PID_calc(&INS.imu_temp_pid, temp, IMU_Temp_Set);
@@ -356,21 +358,20 @@ static void imu_temp_control(fp32 temp)
     }
     else
     {
-        //在没有达到设置的温度，一直最大功率加热
-        //in beginning, max power
+        // 在没有达到设置的温度，一直最大功率加热
+        // in beginning, max power
         if (temp > IMU_Temp_Set)
         {
             temp_constant_time++;
             if (temp_constant_time > 200)
             {
-                //达到设置温度，将积分项设置为一半最大功率，加速收敛
+                // 达到设置温度，将积分项设置为一半最大功率，加速收敛
                 //
                 first_temperate = 1;
-                INS.imu_temp_pid.Iout = MPU6500_TEMP_PWM_MAX / 2.0f;
+                INS.imu_temp_pid.Iout = MPU6500_TEMP_PWM_MAX / 4.0f;
             }
         }
-
-        IMU_temp_PWM(MPU6500_TEMP_PWM_MAX - 1);
+        IMU_temp_PWM(MPU6500_TEMP_PWM_MAX - 3000);
     }
 }
 

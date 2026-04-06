@@ -451,6 +451,7 @@ static void Calculate_Gimbal_Motor_Target_Current(pid_type_def *gimbal_motor_pid
         {
             motor->give_current += Pitch_Gravity_Compensation(motor->INS_angle_now);
         }
+        motor->give_current = limit(motor->give_current,-16000.0f,16000.0f);
         break;
     }
     case BIG_YAW_MOTOR: // 6006
@@ -475,6 +476,7 @@ static void Calculate_Gimbal_Motor_Target_Current(pid_type_def *gimbal_motor_pid
         DM_big_yaw_motor.target_current += DM_big_yaw_motor.current_ff * (DM_big_yaw_motor.INS_speed_set - DM_big_yaw_motor.INS_speed_set_last);
         // 应用底盘摩擦补偿
         DM_big_yaw_motor.target_current += CHASSIS_FRICTION_COMPENSATE_COEFF * DM_big_yaw_motor.vel_filtered;
+        DM_big_yaw_motor.target_current = limit(DM_big_yaw_motor.target_current,-11.0f,11.0f);
         break;
     }
     default:
@@ -537,12 +539,71 @@ static void gimbal_nav_pass_bumpy_handler(void)
 static void gimbal_autoaim_handler(void)
 {
     gimbal_control.big_yaw_mode = POSITION_INS, gimbal_control.small_yaw_mode = POSITION_INS, gimbal_control.pitch_mode = POSITION_INS;
+    //大yaw状态机相关数据结构
+    typedef enum
+    {
+        BIG_YAW_IN_DEADZONE = 0,
+        BIG_YAW_SLOW_RETURN = 1,
+        BIG_YAW_FAST_RETURN = 2
+    } big_yaw_autoaim_state_t;
+    static big_yaw_autoaim_state_t big_yaw_autoaim_state = BIG_YAW_IN_DEADZONE;
+    static fp32 big_yaw_last_active_target_angle = 0.0f;
 
     if (gimbal_control.gimbal_mode_last != AUTOAIM)
     {
         PID_clear(&gimbal_small_yaw_motor.auto_aim_pid);
         PID_clear(&DM_big_yaw_motor.auto_aim_pid);
         PID_clear(&gimbal_pitch_motor.auto_aim_pid);
+        big_yaw_autoaim_state = BIG_YAW_IN_DEADZONE;
+        big_yaw_last_active_target_angle = DM_big_yaw_motor.INS_angle_now;
+    }
+
+    // 大yaw控制逻辑
+    float big_yaw_autoaim_target_angle = Find_Yaw_Min_Angle(NUC_Data_Receive.big_yaw_aim > 0 ? NUC_Data_Receive.big_yaw_aim - 180 : NUC_Data_Receive.big_yaw_aim + 180, DM_big_yaw_motor.INS_angle_now);
+    float big_yaw_autoaim_error_abs = my_fabsf(big_yaw_autoaim_target_angle - DM_big_yaw_motor.INS_angle_now);
+
+    switch (big_yaw_autoaim_state)
+    {
+    case BIG_YAW_FAST_RETURN:
+        if (big_yaw_autoaim_error_abs < 3.0f)
+            big_yaw_autoaim_state = BIG_YAW_IN_DEADZONE;          
+        break;
+
+    case BIG_YAW_SLOW_RETURN:
+        if (big_yaw_autoaim_error_abs > BIG_YAW_AUTOAIM_SLOW_FOLLOW_RANGE)
+            big_yaw_autoaim_state = BIG_YAW_FAST_RETURN;
+        else if (big_yaw_autoaim_error_abs < 2.0f)
+            big_yaw_autoaim_state = BIG_YAW_IN_DEADZONE;
+        break;
+
+    case BIG_YAW_IN_DEADZONE:
+    default:
+        if (big_yaw_autoaim_error_abs > BIG_YAW_AUTOAIM_SLOW_FOLLOW_RANGE)
+            big_yaw_autoaim_state = BIG_YAW_FAST_RETURN;
+        else if (big_yaw_autoaim_error_abs > BIG_YAW_AUTOAIM_STOP_RANGE)
+            big_yaw_autoaim_state = BIG_YAW_SLOW_RETURN;
+        break;
+    }
+
+    switch (big_yaw_autoaim_state)
+    {
+    case BIG_YAW_FAST_RETURN:
+        big_yaw_last_active_target_angle = big_yaw_autoaim_target_angle;
+        DM_big_yaw_motor.INS_angle_set = big_yaw_autoaim_target_angle;
+        Calculate_Gimbal_Motor_Target_Current(&DM_big_yaw_motor.omni_pid, POSITION_INS, BIG_YAW_MOTOR, DM_big_yaw_motor.INS_angle_now, big_yaw_autoaim_target_angle);
+        break;
+
+    case BIG_YAW_SLOW_RETURN:
+        big_yaw_last_active_target_angle = big_yaw_autoaim_target_angle;
+        DM_big_yaw_motor.INS_angle_set = ramp_control(DM_big_yaw_motor.INS_angle_now, big_yaw_autoaim_target_angle, 0.3f);
+        Calculate_Gimbal_Motor_Target_Current(&DM_big_yaw_motor.auto_aim_pid, POSITION_INS, BIG_YAW_MOTOR, DM_big_yaw_motor.INS_angle_now, DM_big_yaw_motor.INS_angle_set);
+        break;
+
+    case BIG_YAW_IN_DEADZONE:
+    default:
+        DM_big_yaw_motor.INS_angle_set = big_yaw_last_active_target_angle;
+        Calculate_Gimbal_Motor_Target_Current(&DM_big_yaw_motor.omni_pid, POSITION_INS, BIG_YAW_MOTOR, DM_big_yaw_motor.INS_angle_now, DM_big_yaw_motor.INS_angle_set);
+        break;
     }
 
     // 小yaw控制逻辑
@@ -551,43 +612,6 @@ static void gimbal_autoaim_handler(void)
     gimbal_small_yaw_motor.speed_pid.Kd = SMALL_YAW_MOTOR_NORMAL_SPEED_PID_KD;
     gimbal_small_yaw_motor.INS_angle_set = Find_Yaw_Min_Angle(NUC_Data_Receive.small_yaw_aim > 0 ? NUC_Data_Receive.small_yaw_aim - 180 : NUC_Data_Receive.small_yaw_aim + 180, gimbal_small_yaw_motor.INS_angle_now);
     Calculate_Gimbal_Motor_Target_Current(&gimbal_small_yaw_motor.auto_aim_pid, POSITION_INS, SMALL_YAW_MOTOR, gimbal_small_yaw_motor.INS_angle_now, gimbal_small_yaw_motor.INS_angle_set);
-
-    // 大yaw控制逻辑
-    float big_yaw_autoaim_target_angle = Find_Yaw_Min_Angle(NUC_Data_Receive.big_yaw_aim > 0 ? NUC_Data_Receive.big_yaw_aim - 180 : NUC_Data_Receive.big_yaw_aim + 180, DM_big_yaw_motor.INS_angle_now);
-    float big_yaw_autoaim_error = big_yaw_autoaim_target_angle - DM_big_yaw_motor.INS_angle_now;
-    static uint8_t big_yaw_lock_flag = 0; //全向感知快速转头
-
-    if (my_fabsf(big_yaw_autoaim_error) > BIG_YAW_AUTOAIM_SLOW_FOLLOW_RANGE)
-    {
-        big_yaw_lock_flag = 1;
-    }
-
-    if (big_yaw_lock_flag)
-    {
-        // 标志置位期间，持续调用nav_angle_pid快速转头
-        DM_big_yaw_motor.INS_angle_set = big_yaw_autoaim_target_angle;
-        Calculate_Gimbal_Motor_Target_Current(&DM_big_yaw_motor.omni_pid, POSITION_INS, BIG_YAW_MOTOR, DM_big_yaw_motor.INS_angle_now, big_yaw_autoaim_target_angle);
-
-        // 直到误差小于3度，清除标志，恢复正常流程
-        if (my_fabsf(big_yaw_autoaim_error) < 3.0f)
-        {
-            big_yaw_lock_flag = 0;
-        }
-    }
-    else
-    {
-        if (my_fabsf(big_yaw_autoaim_error) < BIG_YAW_AUTOAIM_STOP_RANGE)
-        {
-            DM_big_yaw_motor.INS_angle_set = DM_big_yaw_motor.INS_angle_now; // 当小yaw接近中心，大yaw不需要转动
-            Calculate_Gimbal_Motor_Target_Current(&DM_big_yaw_motor.nav_angle_pid, POSITION_INS, BIG_YAW_MOTOR, DM_big_yaw_motor.INS_angle_now, DM_big_yaw_motor.INS_angle_set);
-        }
-        else if (my_fabsf(big_yaw_autoaim_error) < BIG_YAW_AUTOAIM_SLOW_FOLLOW_RANGE)
-        {
-            DM_big_yaw_motor.INS_angle_set = ramp_control(DM_big_yaw_motor.INS_angle_now, big_yaw_autoaim_target_angle, 0.3f);
-            Calculate_Gimbal_Motor_Target_Current(&DM_big_yaw_motor.auto_aim_pid, POSITION_INS, BIG_YAW_MOTOR, DM_big_yaw_motor.INS_angle_now, DM_big_yaw_motor.INS_angle_set);
-        }
-    }
-
     // pitch控制逻辑
     gimbal_pitch_motor.INS_angle_set = NUC_Data_Receive.pitch_aim;
     Check_Pitch_Angle_Limit(POSITION_INS);
@@ -706,7 +730,7 @@ static void Call_Gimbal_Mode_Handler(gimbal_mode_t mode)
 
 void Gimbal_Task(void const *argument)
 {
-    // 等待INS_Task完成第一次while(1)循环再启动gimbal_task，否则云台在非失能模式下会失控
+    // 等待INS_Task卡尔曼滤波收敛再启动gimbal_task，否则云台在非失能模式下会失控
     if (xSemaphoreTake(ins_init_done_semaphore, portMAX_DELAY) != pdPASS)
     {
         Error_Handler();
@@ -730,7 +754,7 @@ void Gimbal_Task(void const *argument)
 //	    Allocate_Can_Msg(500, gimbal_pitch_motor.give_current, 0, 0, CAN_SMALL_YAW_AND_PITCH_CMD);
         //		Allocate_Can_Msg(0, 0, 0, 0, CAN_SMALL_YAW_AND_PITCH_CMD);
 
-         Vofa_Send_Data4(DM_big_yaw_motor.vel,DM_big_yaw_motor.toq,DM_big_yaw_motor.vel_filtered,DM_big_yaw_motor.INS_angle_now );
+        //  Vofa_Send_Data4(gimbal_pitch_motor.give_current,motor_measure_pitch.given_current,gimbal_pitch_motor.INS_speed_set,gimbal_pitch_motor.INS_speed_now );
 
         cnt == 120 ? cnt = 1 : cnt++; // div等于2,3,4,5的最小公倍数时重置
         vTaskDelay(2);

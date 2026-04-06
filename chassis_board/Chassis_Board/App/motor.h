@@ -58,6 +58,7 @@ typedef struct // 底盘轮电机结构体 3508
     int8_t spin_direction; // 控制轮电机正反转
     int16_t speed_now;     // rpm
     fp32 speed_set;
+    fp32 speed_set_last;
     int16_t give_current;
 
     pid_type_def speed_pid;
@@ -67,7 +68,7 @@ typedef struct // 底盘舵电机结构体 6020
 {
     int16_t speed_now; // rpm
     fp32 speed_set;
-	  fp32 speed_set_last;
+    fp32 speed_set_last;
     fp32 angle_now; // 经过归一化后的舵电机当前位置。单位：度，范围0~180
     fp32 angle_set;
     fp32 angle_set_last;
@@ -109,6 +110,8 @@ typedef struct // 大yaw 达妙6006结构体
     int kd_int;
     float pos;
     float vel;
+    float vel_filtered;
+    float vel_last;
     float toq;
     float Kp;
     float Kd;
