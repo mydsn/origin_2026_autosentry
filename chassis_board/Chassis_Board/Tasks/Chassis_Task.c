@@ -22,7 +22,7 @@
 #include "Chassis_Power_Limitor.h"
 
 #define HAVE_REFEREE_SYSTEM 1 // 哨兵当前是否安装裁判系统
-#define COMPETE_MODE 1		  // 是否比赛模式
+#define COMPETE_MODE 0		  // 是否比赛模式
 /*******************************底盘控制相关结构体和枚举体***********************************/
 typedef enum
 {
@@ -386,7 +386,15 @@ static void Set_Chassis_VxVy(fp32 yaw_chassis_zero_rad, fp32 *chassis_vx, fp32 *
 			if (nav_ctrl.updownhill_state == 2)
 				ramp_coeff = 0.03f;
 			else
+<<<<<<< HEAD
 				ramp_coeff = 0.7f;
+=======
+<<<<<<< HEAD
+				ramp_coeff = 0.7f;
+=======
+				ramp_coeff = 0.01f;
+>>>>>>> 2716c373a05c3fed771023a7d8403f96ef74b1c3
+>>>>>>> ab126336ff40d6cadd1fe3c986f5c365757dc319
 
 			gimbal_vx = ramp_control(gimbal_vx, (my_fabsf(nav_ctrl.vx) < 0.01 ? 0 : nav_ctrl.vx) * M_PER_SEC_TO_RPM, ramp_coeff);
 			gimbal_vy = ramp_control(gimbal_vy, (my_fabsf(nav_ctrl.vy) < 0.01 ? 0 : nav_ctrl.vy) * M_PER_SEC_TO_RPM, ramp_coeff);

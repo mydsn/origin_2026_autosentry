@@ -28,7 +28,7 @@ static void DWT_CNT_Update(void)
     if (__get_CONTROL()) // 不在中断中,使用互斥锁;在中断则直接执行即可
         if (osOK != osMutexWait(DWT_MUTEX, 0))
             return;
-
+            
     volatile uint32_t cnt_now = DWT->CYCCNT;
     if (cnt_now < CYCCNT_LAST)
         CYCCNT_RountCount++;
