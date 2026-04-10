@@ -28,7 +28,6 @@ static void DWT_CNT_Update(void)
     if (__get_CONTROL()) // 不在中断中,使用互斥锁;在中断则直接执行即可
         if (osOK != osMutexWait(DWT_MUTEX, 0))
             return;
-
     volatile uint32_t cnt_now = DWT->CYCCNT;
     if (cnt_now < CYCCNT_LAST)
         CYCCNT_RountCount++;
@@ -82,7 +81,6 @@ uint8_t DWT_Init(uint32_t CPU_Freq_mHz)
 
 void DWT_DeInit(void)
 {
-
     // 1. 关闭 CYCCNT 计数器（停止计数）
     DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk; // 清除 CYCCNTENA 位（bit0）
 
