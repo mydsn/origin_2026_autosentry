@@ -95,7 +95,7 @@ void Send_Chassis_Task()
         nav_data_u.single_data.energy_buffer = (Power_Heat_Data.buffer_energy > 63) ? 63 : Power_Heat_Data.buffer_energy; // 限制在0~(2^6-1)，一般不会超限
         nav_data_u.single_data.chassis_max_power = (Game_Robot_State.chassis_power_limit > 255) ? 255 : Game_Robot_State.chassis_power_limit;  //限制在0~(2^8-1)，一般不会超限
         nav_data_u.single_data.at_middle_section = (Game_Status.game_progress == 4 && ((RFID_Status.rfid_status >> 23) & 0x01)) ? 1 : 0;
-				nav_data_u.single_data.rmul_first_go_to_middle = NUC_Data_Receive.occupy_middle_section;
+		nav_data_u.single_data.rmul_first_go_to_middle = NUC_Data_Receive.occupy_middle_section;
         nav_data_u.single_data.game_start = (Game_Status.game_progress == 4) ? 1 : 0;
 
         Allocate_Can_Msg(nav_data_u.packed_data[0], nav_data_u.packed_data[1], nav_data_u.packed_data[2], nav_data_u.packed_data[3], CAN_GIMBAL_TO_CHASSIS_SECOND_CMD);
