@@ -47,6 +47,7 @@ typedef struct // 底盘控制参数结构体
 	fp32 chassis_max_power;			  // 底盘最大功率限制值，单位：W
 	fp32 referee_chassis_power_limit; // 来自裁判系统的底盘功率上限，单位：W
 	fp32 current_wz;
+	uint8_t steer_stuck_status[4];    // 记录对应舵电机是否卡住 (1: 卡住, 0: 正常)
 
 	bool_t is_stop;					   // 当前是否停车
 	bool_t is_stop_last;			   // is_stop_last在定义时一定要初始化为TRUE,保证在进入非失能模式的时候先初始化轮电机旋转方向
@@ -102,8 +103,6 @@ power_limitor_t power_limitor =
 				.k_w = M3508_K_W,
 				.k_t = M3508_K_T,
 				.p_static = M3508_STATIC_POWER,
-				.min_weight = 0.0f,
-				.max_weight = 0.0f,
 			},
 		.steer_motors =
 			{
@@ -111,8 +110,6 @@ power_limitor_t power_limitor =
 				.k_w = GM6020_K_W,
 				.k_t = GM6020_K_T,
 				.p_static = GM6020_STATIC_POWER,
-				.min_weight = 0.0f,
-				.max_weight = 0.0f,
 			}};
 chassis_speed_t chassis_target_speed = {0};
 nav_ctrl_t nav_ctrl = {0};
@@ -130,7 +127,7 @@ static void Set_Rotate_Wz(fp32 *wz);
 static void Call_Chassis_Mode_Handler(chassis_mode_t mode);
 static void Chassis_Vector_To_Steer_Angle(const fp32 vx_set, const fp32 vy_set, const fp32 wz_set, chassis_mode_t mode);
 static void Chassis_Vector_To_Wheel_Speed(const fp32 vx_set, const fp32 vy_set, const fp32 wz_set, chassis_mode_t mode);
-static int16_t Bumpy_Steer_Stuck_Compensation(uint8_t i); 
+static void Check_Bumpy_Steer_Stuck(void); 
 static void Chassis_Motor_Control_Current_Set(chassis_mode_t mode);
 void Chassis_Task(void const *argument);
 
@@ -475,7 +472,7 @@ static void Set_Rotate_Wz(fp32 *wz)
 			{
 			case NAV_ROTATE_OFF:
 				target_wz = 0.0f;
-				ramp_coeff = 0.1f; // 停转斜坡
+				ramp_coeff = 0.1f; // 停转斜坡系数
 				break;
 
 			case NAV_ROTATE_TOE_ERROR:
@@ -495,8 +492,8 @@ static void Set_Rotate_Wz(fp32 *wz)
 				break;
 
 			case NAV_ROTATE_NORMAL:
-				// 常规导航模式，高速陀螺
-				target_wz = - ROTATE_WZ_MEDIUM * RAD_PER_SEC_TO_RPM;
+				// 常规导航模式，零速陀螺
+				target_wz = ROTATE_WZ_MIN * RAD_PER_SEC_TO_RPM;
 				ramp_coeff = 0.15f;
 				break;
 			}
@@ -694,43 +691,67 @@ static void Chassis_Vector_To_Wheel_Speed(const fp32 vx_set, const fp32 vy_set, 
 	}
 }
 /**
- * @brief  颠簸路段舵卡住后脱困策略,若监测到卡住则补偿一段时间的定值电流
- * @param  i: 舵轮索引 (0~3)
- * @retval 补偿电流值
+ * @brief  检测过颠簸路段时的卡舵状态
+ * @note   更新 chassis_control.steer_stuck_status 数组
  */
-static int16_t Bumpy_Steer_Stuck_Compensation(uint8_t i)
+static void Check_Bumpy_Steer_Stuck(void)
 {
-	static uint16_t steer_stuck_count[4] = {0}; // 用于记录舵轮卡住的时间
+	static uint16_t steer_stuck_count[4] = {0}; // 记录卡住的计数
+	static uint16_t steer_unstuck_count[4] = {0}; // 记录退出卡死状态的计数
+	const uint16_t STUCK_ENTER_COUNT = 150;
+	const uint16_t STUCK_EXIT_COUNT = 30;
 
 	if (chassis_control.chassis_max_power_mode != PASS_BUMPY)
 	{
-		steer_stuck_count[i] = 0; // 非颠簸路段不计数
-		return 0;
+		for (uint8_t i = 0; i < 4; i++)
+		{
+			steer_stuck_count[i] = 0;
+			steer_unstuck_count[i] = 0;
+			chassis_control.steer_stuck_status[i] = 0;
+		}
+		return;
 	}
 
-	// 计算角度误差
-	fp32 angle_error = chassis_steer_motor[i].angle_set - chassis_steer_motor[i].angle_now;
-
-	// 检测舵是否卡住
-	if (my_fabsf(angle_error) > 15.0f && my_fabsf(chassis_steer_motor[i].speed_now) < 10.0f 
-	&& my_fabsf(chassis_steer_motor[i].give_current) > my_fabsf(0.8f * chassis_steer_motor[i].speed_pid.Kp * (chassis_steer_motor[i].speed_set - chassis_steer_motor[i].speed_now)))
+	for (uint8_t i = 0; i < 4; i++)
 	{
-		steer_stuck_count[i]++;
-		if (steer_stuck_count[i] > 150) // 持续阻塞约300ms后开始补偿
+		// 计算角度误差
+		fp32 angle_error = chassis_steer_motor[i].angle_set - chassis_steer_motor[i].angle_now;
+
+		// 判定条件：误差>15度，且速度<10rpm
+		if (my_fabsf(angle_error) > 15.0f && my_fabsf((float)chassis_steer_motor[i].speed_now) < 10.0f)
 		{
-			// 防止计数器溢出
-			if (steer_stuck_count[i] > 1000) steer_stuck_count[i] = 1000;
-			
-			// 根据误差方向施加额外的堵转前馈电流，助力脱困 (具体大小可依调车情况修改)
-			return (angle_error > 0) ? 10000 : -10000;
+			steer_stuck_count[i]++;
+			steer_unstuck_count[i] = 0;
+			if (steer_stuck_count[i] > STUCK_ENTER_COUNT) // 持续满足条件约 150次（时间依调度频率定）判定为卡死
+			{
+				chassis_control.steer_stuck_status[i] = 1;
+				if (steer_stuck_count[i] > 1000) steer_stuck_count[i] = 1000;
+			}
+		}
+		else
+		{
+			// 退出卡死状态一段时间后（不满足卡死条件达到固定计数）才清除卡死标志
+			if (chassis_control.steer_stuck_status[i] == 1)
+			{
+				if (steer_unstuck_count[i] < STUCK_EXIT_COUNT)
+				{
+					steer_unstuck_count[i]++;
+				}
+				else
+				{
+					steer_stuck_count[i] = 0;
+					steer_unstuck_count[i] = 0;
+					chassis_control.steer_stuck_status[i] = 0;
+				}
+			}
+			else
+			{
+				steer_stuck_count[i] = 0;
+				steer_unstuck_count[i] = 0;
+				chassis_control.steer_stuck_status[i] = 0;
+			}
 		}
 	}
-	else
-	{
-		steer_stuck_count[i] = 0; // 恢复正常或误差极小，计数清零
-	}
-
-	return 0;
 }
 
 /**
@@ -755,10 +776,14 @@ static void Chassis_Motor_Control_Current_Set(chassis_mode_t mode)
 		chassis_steer_motor[i].give_current = (int16_t)chassis_steer_motor[i].speed_pid.out + STEER_MOTOR_CURRENT_FF * (chassis_steer_motor[i].speed_set - chassis_steer_motor[i].speed_set_last);
 		
 		// 叠加颠簸路段防卡住前馈补偿
-		chassis_steer_motor[i].give_current += Bumpy_Steer_Stuck_Compensation(i);
-
+		if (chassis_control.steer_stuck_status[i] == 1)
+		{
+			// 计算角度误差决定补偿方向
+			fp32 angle_error = chassis_steer_motor[i].angle_set - chassis_steer_motor[i].angle_now;	
+			chassis_steer_motor[i].give_current += my_sign(angle_error) * 10000.0f;
+		}
 		chassis_steer_motor[i].give_current = limit(chassis_steer_motor[i].give_current, -16000.0f, 16000.0f);
-
+		
 		PID_calc(&chassis_wheel_motor[i].speed_pid, chassis_wheel_motor[i].speed_now, chassis_wheel_motor[i].speed_set);
 		chassis_wheel_motor[i].give_current = (int16_t)chassis_wheel_motor[i].speed_pid.out + WHEEL_MOTOR_CURRENT_FF * (chassis_wheel_motor[i].speed_set - chassis_wheel_motor[i].speed_set_last);
 		chassis_wheel_motor[i].give_current = limit(chassis_wheel_motor[i].give_current, -16000.0f, 16000.0f);
@@ -778,6 +803,7 @@ void Chassis_Task(void const *argument)
 		Chassis_Data_Update();
 		Chassis_Mode_Update(&chassis_control.chassis_mode);
 		Chassis_Max_Power_Update(&chassis_control.chassis_max_power);
+		Check_Bumpy_Steer_Stuck(); // 更新卡舵状态
 
 		Call_Chassis_Mode_Handler(chassis_control.chassis_mode);
 		Chassis_Vector_To_Steer_Angle(chassis_target_speed.vx, chassis_target_speed.vy, chassis_target_speed.wz, chassis_control.chassis_mode);
@@ -785,7 +811,7 @@ void Chassis_Task(void const *argument)
 		Chassis_Motor_Control_Current_Set(chassis_control.chassis_mode);
 
 		power_limitor.weight_allocate_mode = (chassis_control.chassis_max_power_mode == PASS_BUMPY) ? PASS_BUMPY_ALLOCATE : NORMAL_WEIGHT_ALLOCATE;
-		Chassis_Power_Control(&power_limitor, chassis_wheel_motor, chassis_steer_motor, chassis_control.chassis_max_power, power_limitor.weight_allocate_mode);
+		Chassis_Power_Control(&power_limitor, chassis_wheel_motor, chassis_steer_motor, chassis_control.chassis_max_power, power_limitor.weight_allocate_mode, chassis_control.steer_stuck_status);
 
 		if (cnt % 5 != 0)
 		{

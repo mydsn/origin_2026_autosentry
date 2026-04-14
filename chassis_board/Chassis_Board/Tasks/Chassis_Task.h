@@ -85,7 +85,6 @@
 #define BUFFER_ENERGY_PID_MAX_OUT 30.0f
 #define BUFFER_ENERGY_PID_MAX_IOUT 30.0f
 
-
 typedef struct // 上板传下来的导航相关数据
 {
     fp32 vx;

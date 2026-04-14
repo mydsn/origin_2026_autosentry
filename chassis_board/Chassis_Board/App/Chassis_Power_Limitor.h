@@ -42,8 +42,6 @@ typedef struct // 电机组功率模型结构体
 
     float weight[MOTOR_NUM];        // 电机权重
     float alpha[MOTOR_NUM];         // 电机目标电流缩放的幅度值，范围为（MIN_CMD_CURRENT/abs(speed_pid.give_current)）~ MAX_CMD_CURRENT/abs(speed_pid.give_current))
-    float min_weight;              // 电机组最低权重
-    float max_weight;              // 电机组最高权重
 
     /*功率控制后(如果需要功率控制的话）的电机输入功率为:
     K_P * (alpha * motor.give_current) * motor.speed_now + K_W * motor.speed_now ^ 2 + K_T * (alpha * motor.give_current) ^ 2 + STATIC_POWER
@@ -70,6 +68,6 @@ typedef struct // 功率控制结构体
     power_model_t steer_motors; // 舵电机组功率模型
 } power_limitor_t;
 
-void Chassis_Power_Control(power_limitor_t *power_limiter, chassis_wheel_motor_t wheel_motor[4], chassis_steer_motor_t steer_motor[4], float P_max, weight_allocate_mode_t weight_allocate_mode);
+void Chassis_Power_Control(power_limitor_t *power_limiter, chassis_wheel_motor_t wheel_motor[4], chassis_steer_motor_t steer_motor[4], float P_max, weight_allocate_mode_t weight_allocate_mode, const uint8_t steer_stuck_status[4]);
 
 #endif

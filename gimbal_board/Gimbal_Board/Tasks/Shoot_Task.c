@@ -41,7 +41,7 @@ shoot_control_t shoot_control = {
 	.dial_back_flag = 0
 };
 /*****************************************************************根据裁判系统发射数据进行弹速闭环********************************************************************************/
-#define DEBUG_MODE 0 // 日常调试1，比赛前改0
+#define DEBUG_MODE 1 // 日常调试1，比赛前改0
 
 #if HAVE_REFEREE_SYSTEM
 #define USE_REFEREE_BULLET_SPEED_LOOP 1 // 1:对裁判系统传回的弹速闭环，外环控弹速（因为裁判系统传回的弹速数据是发射一发子弹传一次，频率不固定，所以只能用状态机控制，不用pid)，内环控摩擦轮3508转速
@@ -219,7 +219,7 @@ void Fric_Motor_Current_Control(void)
 }
 
 /**
- * @description:结合裁判系统数据，自主计算当前热量
+ * @description:自主计算当前热量，裁判系统数据仅用作校准
  * @return 当前热量
  */
 float Get_Current_Heat(void)
