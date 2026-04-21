@@ -340,7 +340,7 @@
 
   <Group>
     <GroupName>Application/User</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -1207,8 +1207,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Chassis_Board\App\Chassis_Power_Limitor.c</PathWithFileName>
-      <FilenameWithoutPath>Chassis_Power_Limitor.c</FilenameWithoutPath>
+      <PathWithFileName>..\Chassis_Board\App\Chassis_Power_Limiter.c</PathWithFileName>
+      <FilenameWithoutPath>Chassis_Power_Limiter.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

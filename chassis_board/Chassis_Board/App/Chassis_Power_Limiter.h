@@ -1,12 +1,12 @@
 /*****************************************************************************************************************************
- * @file: Chassis_Power_Limitor.h
+ * @file: Chassis_Power_Limiter.h
  * @author: Shiki
  * @date: 2025.12.19
  * @brief:	起源哨兵2026赛季底盘功率限制模块头文件
  *****************************************************************************************************************************/
 
-#ifndef CHASSIS_POWER_LIMITOR_H
-#define CHASSIS_POWER_LIMITOR_H
+#ifndef CHASSIS_POWER_LIMITER_H
+#define CHASSIS_POWER_LIMITER_H
 
 #include "motor.h"
 /*****************************************************************************************************************************
@@ -66,8 +66,8 @@ typedef struct // 功率控制结构体
 
     power_model_t wheel_motors; // 轮电机组功率模型
     power_model_t steer_motors; // 舵电机组功率模型
-} power_limitor_t;
+} power_limiter_t;
 
-void Chassis_Power_Control(power_limitor_t *power_limiter, chassis_wheel_motor_t wheel_motor[4], chassis_steer_motor_t steer_motor[4], float P_max, weight_allocate_mode_t weight_allocate_mode, const uint8_t steer_stuck_status[4]);
+void Chassis_Power_Control(power_limiter_t *power_limiter, chassis_wheel_motor_t wheel_motor[4], chassis_steer_motor_t steer_motor[4], float P_max, weight_allocate_mode_t weight_allocate_mode, const uint8_t steer_stuck_status[4]);
 
 #endif

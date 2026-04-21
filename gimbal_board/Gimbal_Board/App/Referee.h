@@ -242,7 +242,7 @@ extern "C"
 	typedef __packed struct // 0x0204 机器人增益
 	{
 		uint8_t recovery_buff;
-		uint8_t cooling_buff;
+		uint16_t cooling_buff;
 		uint8_t defence_buff;
 		uint8_t vulnerability_buff;
 		uint16_t attack_buff;

@@ -764,9 +764,9 @@
               <FilePath>..\Chassis_Board\App\Vofa_send.c</FilePath>
             </File>
             <File>
-              <FileName>Chassis_Power_Limitor.c</FileName>
+              <FileName>Chassis_Power_Limiter.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Chassis_Board\App\Chassis_Power_Limitor.c</FilePath>
+              <FilePath>..\Chassis_Board\App\Chassis_Power_Limiter.c</FilePath>
             </File>
           </Files>
         </Group>

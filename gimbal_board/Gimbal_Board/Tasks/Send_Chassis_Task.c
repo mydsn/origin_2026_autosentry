@@ -20,7 +20,14 @@ typedef enum
     HEALTH_NORMAL, // 正常模式，低速小陀螺
     HEALTH_HURT    // 被敌方击打，高速小陀螺
 } health_state_t;
-
+/**************************哨兵底盘剩余能量枚举体***************************/
+typedef enum
+{
+    ABOVE_FIFTY_PERCENT,             // 50%以上
+    THIRTY_PERCENT_TO_FIFTY_PERCENT, // 30%到50%
+    FIVE_PERCENT_TO_THIRTY_PERCENT,  // 5%到30%
+    BELOW_FIVE_PERCENT,              // 5%以下
+} total_energy_remain_t;
 /**************************需要传到下板的导航数据***************************/
 union
 {
@@ -30,12 +37,14 @@ union
         uint64_t nav_vx_uint : 16; // 对应packed_flags的最低十六位，下面以此类推
         uint64_t nav_vy_uint : 16;
         uint64_t nav_chassis_mode : 2;  //1底盘跟头2小陀螺
-        uint64_t updownhill_state : 2;
+        uint64_t updownhill_state : 2;  //2表示正在上下坡，其余表示不在上下坡
         uint64_t health_state : 1;
         uint64_t energy_buffer : 6; //当前底盘剩余缓冲能量
         uint64_t chassis_max_power : 8; //裁判系统传过来的底盘功率上限
         uint64_t game_start : 1; // 比赛是否开始
-        uint64_t reserved : 12;         // 保留位
+        uint64_t total_energy_remain : 2; // 底盘总能量剩余
+        uint64_t game_remain_time : 9; // 比赛剩余时间
+        uint64_t just_revive : 1; // 是否刚复活
     }single_data;
 } __attribute__((packed)) nav_data_u;
 
@@ -93,6 +102,49 @@ void Send_Chassis_Task()
         nav_data_u.single_data.energy_buffer = (Power_Heat_Data.buffer_energy > 63) ? 63 : Power_Heat_Data.buffer_energy; // 限制在0~(2^6-1)，一般不会超限
         nav_data_u.single_data.chassis_max_power = (Game_Robot_State.chassis_power_limit > 255) ? 255 : Game_Robot_State.chassis_power_limit;  //限制在0~(2^8-1)，一般不会超限
         nav_data_u.single_data.game_start = (Game_Status.game_progress == 4) ? 1 : 0;
+
+        switch(Buff_Musk.remaining_energy)
+        {
+            case 0x7F:
+            case 0x7E:
+            case 0x7C:
+                nav_data_u.single_data.total_energy_remain = ABOVE_FIFTY_PERCENT;
+                break;
+
+            case 0x78:
+                nav_data_u.single_data.total_energy_remain = THIRTY_PERCENT_TO_FIFTY_PERCENT;
+                break;
+
+            case 0x70:
+            case 0x60:
+                nav_data_u.single_data.total_energy_remain = FIVE_PERCENT_TO_THIRTY_PERCENT;
+                break;
+
+            case 0x40:
+            case 0x00:
+                nav_data_u.single_data.total_energy_remain = BELOW_FIVE_PERCENT;
+                break;
+        }
+
+        nav_data_u.single_data.game_remain_time = (Game_Status.game_progress == 4) ? Game_Status.stage_remain_time : 420;
+
+        static uint16_t last_robot_hp;
+        static uint8_t revive_counter = 0;
+        if ((Game_Robot_State.current_HP > 0) && (last_robot_hp == 0)) //复活后发十次刚复活，防止漏发
+        {
+            revive_counter = 10;
+        }
+
+        if (revive_counter > 0)
+        {
+            nav_data_u.single_data.just_revive = 1;
+            revive_counter--;
+        }
+        else
+        {
+            nav_data_u.single_data.just_revive = 0;
+        }
+        last_robot_hp = Game_Robot_State.current_HP;
 
         Allocate_Can_Msg(nav_data_u.packed_data[0], nav_data_u.packed_data[1], nav_data_u.packed_data[2], nav_data_u.packed_data[3], CAN_GIMBAL_TO_CHASSIS_SECOND_CMD);
         vTaskDelay(10);

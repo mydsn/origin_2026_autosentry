@@ -25,10 +25,10 @@
 #define MOTOR_DISTANCE_LENGTH 0.41f // 底盘较长的轮距
 #define WHEEL_RADIUS 0.06f  //舵轮半径
 #define MOTOR_REDUCTION_RATIO 13.72f  // 轮电机减速比
-#define CHASSIS_FOLLOW_GIMBAL_BACK_ZERO 50.33f  //底盘跟随云台时的后零点，单位：度
-#define CHASSIS_FOLLOW_GIMBAL_RIGHT_ZERO 140.33f // 底盘跟随云台时的右零点
-#define CHASSIS_FOLLOW_GIMBAL_LEFT_ZERO 320.33f  // 底盘跟随云台时的左零点
-#define CHASSIS_FOLLOW_GIMBAL_ZERO 230.33f       // 底盘跟随云台时的零点，同时也是小陀螺模式下底盘vx(前进)正方向
+#define CHASSIS_FOLLOW_GIMBAL_BACK_ZERO 77.33f  //底盘跟随云台时的后零点，单位：度
+#define CHASSIS_FOLLOW_GIMBAL_RIGHT_ZERO 167.33f // 底盘跟随云台时的右零点
+#define CHASSIS_FOLLOW_GIMBAL_LEFT_ZERO 347.33f  // 底盘跟随云台时的左零点
+#define CHASSIS_FOLLOW_GIMBAL_ZERO 257.33f       // 底盘跟随云台时的零点，同时也是小陀螺模式下底盘vx(前进)正方向
 
 #define STEER_MOROR1_ENC_OFFSET 4782 //1号舵电机的编码器偏置（范围0-8191）
 #define STEER_MOROR2_ENC_OFFSET 7673 //2号舵电机的编码器偏置（范围0-8191）
@@ -89,13 +89,15 @@ typedef struct // 上板传下来的导航相关数据
 {
     fp32 vx;
     fp32 vy;
-    uint8_t chassis_target_mode;
-    uint8_t updownhill_state;
+    uint8_t chassis_target_mode; // 1底盘跟头2小陀螺
+    uint8_t updownhill_state; //2表示正在上下坡，其余表示不在上下坡
     uint8_t health_state;
-    uint8_t buffer_energy_remain;
-    uint8_t referee_power_limit;
-    uint8_t total_ernergy_remain;
-    uint8_t game_start;
+    uint8_t buffer_energy_remain; // 当前底盘剩余缓冲能量
+    uint8_t referee_power_limit;  // 裁判系统传过来的底盘功率上限
+    uint8_t game_start;           // 比赛是否开始
+    uint8_t total_energy_remain; // 底盘总能量剩余
+    uint16_t game_remain_time; // 比赛剩余时间
+    uint8_t just_revive; // 是否刚复活
 } nav_ctrl_t;
 
 extern nav_ctrl_t nav_ctrl;

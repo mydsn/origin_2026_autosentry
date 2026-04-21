@@ -173,7 +173,7 @@
         <Ww>
           <count>3</count>
           <WinNumber>1</WinNumber>
-          <ItemText>Power_Heat_Data</ItemText>
+          <ItemText>Power_Heat_Data,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>4</count>
@@ -188,7 +188,7 @@
         <Ww>
           <count>6</count>
           <WinNumber>1</WinNumber>
-          <ItemText>LK_dial_motor</ItemText>
+          <ItemText>LK_dial_motor,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>7</count>
@@ -209,6 +209,16 @@
           <count>10</count>
           <WinNumber>1</WinNumber>
           <ItemText>shoot_control.current_heat_without_referee,0x0A</ItemText>
+        </Ww>
+        <Ww>
+          <count>11</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>DM_big_yaw_motor,0x0A</ItemText>
+        </Ww>
+        <Ww>
+          <count>12</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>INS</ItemText>
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>

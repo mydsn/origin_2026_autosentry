@@ -282,6 +282,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             nav_ctrl.buffer_energy_remain = ((rx_data[5] & 0x07) << 3) | (rx_data[4] >> 5);
             nav_ctrl.referee_power_limit = ((rx_data[6] & 0x07) << 5) | (rx_data[5] >> 3);
             nav_ctrl.game_start = (rx_data[6] >> 3) & 0x01;
+            nav_ctrl.total_energy_remain = (rx_data[6] >> 4) & 0x03;
+            nav_ctrl.game_remain_time = ((rx_data[7] & 0x7F) << 2) | ((rx_data[6] >> 6) & 0x03);
+            nav_ctrl.just_revive = (rx_data[7] >> 7) & 0x01;
 
             detect_hook(NAV_TOE);
             break;

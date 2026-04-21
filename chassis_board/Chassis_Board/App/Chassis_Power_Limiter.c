@@ -1,12 +1,12 @@
 /*****************************************************************************************************************************
- * @file: Chassis_Power_Limitor.c
+ * @file: Chassis_Power_Limiter.c
  * @author: Shiki
  * @date: 2025.12.19
  * @brief:	起源哨兵2026赛季底盘功率限制模块源文件
  *
  功率控制模块工作流程：计算底盘当前预测功率->判断是否超过功率上限->若超过则进行拉格朗日乘子法求解->根据求解结果调整电机目标电流
 *****************************************************************************************************************************/
-#include "Chassis_Power_Limitor.h"
+#include "Chassis_Power_Limiter.h"
 #include "user_common_lib.h"
 #include "detect_task.h"
 #include "main.h"
@@ -22,13 +22,13 @@
 #define POWER_TOLERANCE 0.8f            // 功率误差容限，单位W
 /*****************************************************************************************************************************/
 // 函数声明
-void Chassis_Power_Control(power_limitor_t *power_limiter, chassis_wheel_motor_t wheel_motor[4], chassis_steer_motor_t steer_motor[4], float P_max, weight_allocate_mode_t weight_allocate_mode, const uint8_t steer_stuck_status[4]);
-static void Lagrange_Solve_Power_Control(power_limitor_t *power_limiter, chassis_wheel_motor_t wheel_motor[4], chassis_steer_motor_t steer_motor[4], float P_max, weight_allocate_mode_t weight_allocate_mode, const uint8_t steer_stuck_status[4]);
-static float Calculate_Initial_Power(power_limitor_t *power_limiter, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4]);
-static void Calculate_All_Alpha_Coefficients(power_limitor_t *power_limiter, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4]);
-static void Calculate_Alpha(power_limitor_t *power_limiter, float lambda, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4]);
-static float Calculate_Power_With_Alpha(power_limitor_t *power_limiter);
-static void Allocate_Motor_Weight(power_limitor_t *power_limiter, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4], weight_allocate_mode_t weight_allocate_mode, const uint8_t steer_stuck_status[4]);
+void Chassis_Power_Control(power_limiter_t *power_limiter, chassis_wheel_motor_t wheel_motor[4], chassis_steer_motor_t steer_motor[4], float P_max, weight_allocate_mode_t weight_allocate_mode, const uint8_t steer_stuck_status[4]);
+static void Lagrange_Solve_Power_Control(power_limiter_t *power_limiter, chassis_wheel_motor_t wheel_motor[4], chassis_steer_motor_t steer_motor[4], float P_max, weight_allocate_mode_t weight_allocate_mode, const uint8_t steer_stuck_status[4]);
+static float Calculate_Initial_Power(power_limiter_t *power_limiter, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4]);
+static void Calculate_All_Alpha_Coefficients(power_limiter_t *power_limiter, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4]);
+static void Calculate_Alpha(power_limiter_t *power_limiter, float lambda, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4]);
+static float Calculate_Power_With_Alpha(power_limiter_t *power_limiter);
+static void Allocate_Motor_Weight(power_limiter_t *power_limiter, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4], weight_allocate_mode_t weight_allocate_mode, const uint8_t steer_stuck_status[4]);
 
 float lambda;     // debug用
 int iter;         // debug用
@@ -40,7 +40,7 @@ float power_iter; // debug用
  * @param {chassis_steer_motor_t} steer_motor 舵电机结构体数组指针
  * @param {float} P_max 功率上限
  */
-void Chassis_Power_Control(power_limitor_t *power_limiter, chassis_wheel_motor_t wheel_motor[4], chassis_steer_motor_t steer_motor[4], float P_max, weight_allocate_mode_t weight_allocate_mode, const uint8_t steer_stuck_status[4])
+void Chassis_Power_Control(power_limiter_t *power_limiter, chassis_wheel_motor_t wheel_motor[4], chassis_steer_motor_t steer_motor[4], float P_max, weight_allocate_mode_t weight_allocate_mode, const uint8_t steer_stuck_status[4])
 {
     power_limiter->chassis_power_predicted = Calculate_Initial_Power(power_limiter, wheel_motor, steer_motor);
 
@@ -84,7 +84,7 @@ void Chassis_Power_Control(power_limitor_t *power_limiter, chassis_wheel_motor_t
  * @param {chassis_steer_motor_t} steer_motor 舵电机结构体数组指针
  * @param {float} P_max 功率上限
  */
-static void Lagrange_Solve_Power_Control(power_limitor_t *power_limiter, chassis_wheel_motor_t wheel_motor[4], chassis_steer_motor_t steer_motor[4], float P_max, weight_allocate_mode_t weight_allocate_mode, const uint8_t steer_stuck_status[4])
+static void Lagrange_Solve_Power_Control(power_limiter_t *power_limiter, chassis_wheel_motor_t wheel_motor[4], chassis_steer_motor_t steer_motor[4], float P_max, weight_allocate_mode_t weight_allocate_mode, const uint8_t steer_stuck_status[4])
 {
     float lambda_lower_bound = LAMBDA_INITIAL_LOWER_BOUND;
     float lambda_upper_bound = LAMBDA_INITIAL_UPEER_BOUND;
@@ -149,7 +149,7 @@ static void Lagrange_Solve_Power_Control(power_limitor_t *power_limiter, chassis
  * @param {chassis_wheel_motor_t} wheel_motor 轮电机结构体数组指针
  * @param {chassis_steer_motor_t} steer_motor 舵电机结构体数组指针
  */
-static float Calculate_Initial_Power(power_limitor_t *power_limiter, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4])
+static float Calculate_Initial_Power(power_limiter_t *power_limiter, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4])
 {
     float initial_total_power = 0;
     float initial_wheel_power = 0;
@@ -184,7 +184,7 @@ static float Calculate_Initial_Power(power_limitor_t *power_limiter, const chass
  * @param {chassis_wheel_motor_t} wheel_motor
  * @param {chassis_steer_motor_t} steer_motor
  */
-static void Calculate_All_Alpha_Coefficients(power_limitor_t *power_limiter, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4])
+static void Calculate_All_Alpha_Coefficients(power_limiter_t *power_limiter, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4])
 {
     for (int i = 0; i < 4; i++)
     {
@@ -205,7 +205,7 @@ static void Calculate_All_Alpha_Coefficients(power_limitor_t *power_limiter, con
  * @param {chassis_wheel_motor_t} wheel_motor
  * @param {chassis_steer_motor_t} steer_motor
  */
-static void Calculate_Alpha(power_limitor_t *power_limiter, float lambda, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4])
+static void Calculate_Alpha(power_limiter_t *power_limiter, float lambda, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4])
 {
     for (int i = 0; i < 4; i++)
     {
@@ -226,7 +226,7 @@ static void Calculate_Alpha(power_limitor_t *power_limiter, float lambda, const 
  * @param {chassis_wheel_motor_t} wheel_motor 轮电机结构体数组指针
  * @param {chassis_steer_motor_t} steer_motor 舵电机结构体数组指针
  */
-static float Calculate_Power_With_Alpha(power_limitor_t *power_limiter)
+static float Calculate_Power_With_Alpha(power_limiter_t *power_limiter)
 {
     float alpha_total_power = 0;
     float alpha_wheel_power = 0;
@@ -284,7 +284,7 @@ static const weight_config_t WEIGHT_CONFIGS[] = {
  * @param {chassis_wheel_motor_t} wheel_motor
  * @param {chassis_steer_motor_t} steer_motor
  */
-static void Allocate_Motor_Weight(power_limitor_t *power_limiter, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4], weight_allocate_mode_t weight_allocate_mode, const uint8_t steer_stuck_status[4])
+static void Allocate_Motor_Weight(power_limiter_t *power_limiter, const chassis_wheel_motor_t wheel_motor[4], const chassis_steer_motor_t steer_motor[4], weight_allocate_mode_t weight_allocate_mode, const uint8_t steer_stuck_status[4])
 {
     // 获取当前模式对应的配置表（默认回退到 NORMAL 模式保护）
     const weight_config_t *cfg = (weight_allocate_mode == PASS_BUMPY_ALLOCATE) ? 
