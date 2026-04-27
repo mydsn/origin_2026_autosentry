@@ -162,6 +162,12 @@ void NUC_USBD_Tx(uint8_t cmdid)
 		Referee_Data_Transmit.rfid_status = RFID_Status.rfid_status;
 		Referee_Data_Transmit.event_data = Event_Data.event_type;
 		Referee_Data_Transmit.defend_fortress = Student_Interactive_Data.check_defend_fortress;
+
+		if(Robot_Command.target_position_x == 0 && Robot_Command.target_position_y == 0)
+			Referee_Data_Transmit.rush_home = 0;
+		else if (Game_Status.game_progress == Game_Progress_Battle)
+			Referee_Data_Transmit.rush_home = (Robot_Command.target_position_x <= 14.0f ? 1 : 2); // 1冲中央高地，2冲泉水
+
 		memcpy(NUC_USBD_Referee_TxBuf + PROTOCAL_HEAD_LENGTH, (uint8_t *)(&Referee_Data_Transmit), LENGTH_REFEREE_DATA_TX);
 
 		NUC_USBD_Referee_TxBuf[LENGTH_REFEREE_DATA_TX + PROTOCAL_HEAD_LENGTH] = CRC_Calculation(NUC_USBD_Referee_TxBuf, LENGTH_REFEREE_DATA_TX + PROTOCAL_HEAD_LENGTH);

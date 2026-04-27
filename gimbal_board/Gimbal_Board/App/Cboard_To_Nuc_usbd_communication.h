@@ -74,15 +74,18 @@ typedef struct
 	//全局信息
 	uint16_t stage_remain_time;
 	uint8_t game_progress;
-	uint16_t ally_1_robot_HP;
-	uint16_t ally_2_robot_HP;
-	uint16_t ally_3_robot_HP;
-	uint16_t ally_4_robot_HP;
 	uint16_t ally_outpost_HP;
 	uint16_t ally_base_HP;
 	uint32_t rfid_status;
 	uint32_t event_data;
-	bool_t defend_fortress;		 // 是否要回防入侵我方堡垒的敌人
+	bool_t defend_fortress;		 // 是否要回防入侵我方堡垒的敌人，1堡垒有人，0堡垒没人
+	bool_t outpost_alive; //是否进攻前哨站，若敌方前哨站存活则置1
+	uint8_t catch_hero; //抓英雄,如果要抓则发送目标区域代号
+	uint8_t catch_engineer; //抓工程,如果要抓则发送目标区域代号,想上中央高地就发1，兑矿无敌发2
+	uint8_t rush_home; //冲家，1冲中央高地，2冲泉水
+	uint8_t bumpy_exist_enemy; // 1有人0没人，只管我方半场
+	uint8_t enemy_base_flower; //1基地开花，0基地未开花
+	uint8_t could_fire; //发射机构是否解锁
 } __attribute__((__packed__)) Referee_Data_Tx;
 /*******************************************END**********************************************/
 
@@ -103,7 +106,7 @@ typedef struct
 	//导航数据
 	float vx;
 	float vy;
-	float pass_bumpy_yaw_angle;
+	float pass_bumpy_yaw_angle; //过颠簸时的yaw目标角度
 	bool_t updownhill_state;		 // 是否正在上坡
 	bool_t ready_catch_hero; // 是否到达抓英雄的点位
 } __attribute__((__packed__)) NUC_Data_Rx;
