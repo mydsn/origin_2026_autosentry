@@ -153,15 +153,11 @@ void NUC_USBD_Tx(uint8_t cmdid)
 		//全局信息
 		Referee_Data_Transmit.stage_remain_time = Game_Status.stage_remain_time;
 		Referee_Data_Transmit.game_progress = Game_Status.game_progress;
-		Referee_Data_Transmit.ally_1_robot_HP = Game_Robot_HP.ally_1_robot_HP;
-		Referee_Data_Transmit.ally_2_robot_HP = Game_Robot_HP.ally_2_robot_HP;
-		Referee_Data_Transmit.ally_3_robot_HP = Game_Robot_HP.ally_3_robot_HP;
-		Referee_Data_Transmit.ally_4_robot_HP = Game_Robot_HP.ally_4_robot_HP;
 		Referee_Data_Transmit.ally_outpost_HP = Game_Robot_HP.ally_outpost_HP;
 		Referee_Data_Transmit.ally_base_HP = Game_Robot_HP.ally_base_HP;
 		Referee_Data_Transmit.rfid_status = RFID_Status.rfid_status;
 		Referee_Data_Transmit.event_data = Event_Data.event_type;
-		Referee_Data_Transmit.defend_fortress = Student_Interactive_Data.check_defend_fortress;
+		Referee_Data_Transmit.defend_fortress = Student_Interactive_Data.defend_fortress;
 
 		if(Robot_Command.target_position_x == 0 && Robot_Command.target_position_y == 0)
 			Referee_Data_Transmit.rush_home = 0;

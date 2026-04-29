@@ -697,6 +697,9 @@ static void gimbal_remote_control_handler(void)
         Calculate_Gimbal_Motor_Target_Current(&gimbal_small_yaw_motor.angle_pid, POSITION_INS, SMALL_YAW_MOTOR, gimbal_small_yaw_motor.INS_angle_now, gimbal_small_yaw_motor.INS_angle_set);
     }
     /*********大yaw轴电机控制逻辑********/
+//    DM_big_yaw_motor.INS_angle_set = DM_big_yaw_motor.INS_angle_now;
+//    DM_big_yaw_motor.INS_angle_set = Find_Yaw_Min_Angle(DM_big_yaw_motor.INS_angle_set, DM_big_yaw_motor.INS_angle_now); // 让电机选择最近的路径进行转动
+//    Calculate_Gimbal_Motor_Target_Current(&DM_big_yaw_motor.follow_small_yaw_pid, POSITION_ENC, BIG_YAW_MOTOR, DM_big_yaw_motor.INS_angle_set, DM_big_yaw_motor.INS_angle_now);
     fp32 big_yaw_follow_angle = (SMALL_YAW_MIDDLE_ENC_ZERO * GM6020_ENC_TO_DEGREE - gimbal_small_yaw_motor.ENC_angle_now);
     Calculate_Gimbal_Motor_Target_Current(&DM_big_yaw_motor.follow_small_yaw_pid, POSITION_ENC, BIG_YAW_MOTOR, big_yaw_follow_angle, 0);
 
@@ -759,7 +762,7 @@ void Gimbal_Task(void const *argument)
 //	    Allocate_Can_Msg(500, gimbal_pitch_motor.give_current, 0, 0, CAN_SMALL_YAW_AND_PITCH_CMD);
         //		Allocate_Can_Msg(0, 0, 0, 0, CAN_SMALL_YAW_AND_PITCH_CMD);
 
-        //  Vofa_Send_Data4(gimbal_pitch_motor.give_current,motor_measure_pitch.given_current,gimbal_pitch_motor.INS_speed_set,gimbal_pitch_motor.INS_speed_now );
+       Vofa_Send_Data4(gimbal_small_yaw_motor.give_current,motor_measure_small_yaw.given_current,gimbal_small_yaw_motor.INS_speed_set,gimbal_small_yaw_motor.INS_speed_now);
 
         cnt == 120 ? cnt = 1 : cnt++; // div等于2,3,4,5的最小公倍数时重置
         vTaskDelay(2);

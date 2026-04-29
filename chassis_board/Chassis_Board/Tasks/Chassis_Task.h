@@ -50,6 +50,7 @@
 //底盘控制参数（pid,前馈）
 #define CAP_USE_THRESHOLD 0.2f
 #define REVIVE_ON_BUMPY_CAP_EXTRA_THRESHOLD 0.5f
+#define PASS_BUMPY_POWER_THRESHOLD 85.0f
 
 #define WHEEL_MOTOR_SPEED_PID_KP 10.5f
 #define WHEEL_MOTOR_SPEED_PID_KI 0.002f
@@ -66,9 +67,9 @@
 #define STEER_MOTOR_SPEED_FF 3.4f // 舵轮电机速度前馈系数
 #define STEER_MOTOR_CURRENT_FF 8.0f
 
-#define STEER_MOTOR_AGGRESIVE_ANGLE_PID_KP 12.0f //过颠簸＋高速小陀螺特化
+#define STEER_MOTOR_AGGRESIVE_ANGLE_PID_KP 13.0f //过颠簸＋高速小陀螺特化
 #define STEER_MOTOR_AGGRESIVE_ANGLE_PID_KI 0.0002f
-#define STEER_MOTOR_AGGRESIVE_ANGLE_PID_KD 2.0f
+#define STEER_MOTOR_AGGRESIVE_ANGLE_PID_KD 3.0f
 
 #define STEER_MOTOR_ANGLE_PID_KP 4.5f //常规模式
 #define STEER_MOTOR_ANGLE_PID_KI 0.0002f
