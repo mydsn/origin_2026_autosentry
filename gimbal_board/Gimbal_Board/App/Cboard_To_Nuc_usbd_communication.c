@@ -147,7 +147,7 @@ void NUC_USBD_Tx(uint8_t cmdid)
 		Referee_Data_Transmit.shooter_heat_limit = Game_Robot_State.shooter_barrel_heat_limit;
 		Referee_Data_Transmit.shooter_heat_now = Power_Heat_Data.shooter_17mm_barrel_heat;
 		Referee_Data_Transmit.remain_energy = Buff_Musk.remaining_energy;
-		Referee_Data_Transmit.state_now = Sentry_Info.sentry_mode;
+		Referee_Data_Transmit.state_now = (Sentry_Info.sentry_mode == 0 ? NUC_Data_Receive.target_mode: Sentry_Info.sentry_mode);
 		// Referee_Data_Transmit.state_now = NUC_Data_Receive.target_mode;
 
 		//全局信息

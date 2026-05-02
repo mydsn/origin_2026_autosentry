@@ -54,6 +54,7 @@ typedef struct // µ×ÅÌ¿ØÖÆ²ÎÊı½á¹¹Ìå
 	bool_t need_restore_buffer_energy; // ÊÇ·ñĞèÒª»Ö¸´»º³åÄÜÁ¿
 	bool_t bumpy_force_safe;		   // ÊÇ·ñ´¦ÓÚµßô¤Â·¶Î¸´»îÊ±µÄÇ¿ÖÆÊ§ÄÜ×´Ì¬
 	uint32_t bumpy_revive_power_timer; // µßô¤Â·¶Î¸´»îÊ±µÄ¹¦ÂÊ·Å´ó¼ÆÊ±Æ÷
+	bool_t waiting_for_wz_slow_down;   // ÊÇ·ñÕıÔÚµÈ´ıĞ¡ÍÓÂİ¼õËÙµ½µ×ÅÌ¸úËæÄ£Ê½ãĞÖµ
 
 	chassis_mode_t chassis_mode;
 	chassis_max_power_mode_t chassis_max_power_mode;
@@ -226,6 +227,36 @@ static void Chassis_Mode_Update(chassis_mode_t *mode)
 	bool_t nav_follow_gimbal = (chassis_rc_ctrl.s[1] == RC_SW_UP) && (nav_ctrl.chassis_target_mode == NAV_CHASSIS_FOLLOW_GIMBAL);			   // ÊÇ·ñÂú×ãµ¼º½Ä£Ê½ÏÂµ×ÅÌ¸úËæÔÆÌ¨Ä£Ê½£¬ÏÂÃæÒÔ´ËÀàÍÆ
 	bool_t nav_rotate = ((chassis_rc_ctrl.s[1] == RC_SW_UP) && (nav_ctrl.chassis_target_mode == NAV_CHASSIS_ROTATE || toe_is_error(NAV_TOE))); // ÉÏ°åµ¼º½Êı¾İÃ»´«ÏÂÀ´¾Í½øÍÓÂİÄ£Ê½
 
+	// Ìí¼Ó´ÓÍÓÂİÄ£Ê½ÇĞ»»µ½µ×ÅÌ¸úËæÄ£Ê½Ê±µÄ×ªËÙÏŞÖÆÅĞ¶Ï
+	if ((rc_ctrl_follow_gimbal || nav_follow_gimbal) && *mode == ROTATE)
+	{
+		chassis_control.waiting_for_wz_slow_down = TRUE;
+	}
+	
+	if (chassis_control.waiting_for_wz_slow_down)
+	{
+		if (my_fabsf(chassis_control.current_wz) < ROTATE_SLOW_DOWN_THRESHOLD) // ¼õËÙµ½ãĞÖµÒÔÏÂ²ÅÔÊĞíÇĞ»»
+		{
+			chassis_control.waiting_for_wz_slow_down = FALSE;
+		}
+		else
+		{
+			// Ç¿ÖÆÍ£ÁôÔÚÍÓÂİÄ£Ê½
+			rc_ctrl_follow_gimbal = FALSE; 
+			nav_follow_gimbal = FALSE; 
+			
+			// ±£³ÖÏàÓ¦µÄÍÓÂİÄ£Ê½±êÖ¾£¬µ«ÉÔºóÄ¿±ê×ªËÙ»á±»ÉèÎª0
+			if (chassis_rc_ctrl.s[1] == RC_SW_MID)
+			{
+				rc_ctrl_rotate = TRUE;
+			}
+			else if (chassis_rc_ctrl.s[1] == RC_SW_UP)
+			{
+				nav_rotate = TRUE;         
+			}
+		}
+	}
+
 	if (rc_ctrl_safe || chassis_control.bumpy_force_safe)
 	{
 		*mode = CHASSIS_SAFE; // Ê§ÄÜÄ£Ê½µÄÓÅÏÈ¼¶×î¸ß£¬ĞèÒªÓÅÏÈÅĞ¶Ï
@@ -276,6 +307,7 @@ static void Chassis_Max_Power_Update(fp32 *chassis_max_power) // ¸ù¾İ²»Í¬Ä£Ê½Ñ¡Ô
 
 	switch (chassis_rc_ctrl.s[1])
 	{
+	case RC_SW_DOWN:
 	case RC_SW_MID:
 		chassis_control.chassis_max_power_mode = REMOTE_CONTROL;
 		break;
@@ -297,7 +329,6 @@ static void Chassis_Max_Power_Update(fp32 *chassis_max_power) // ¸ù¾İ²»Í¬Ä£Ê½Ñ¡Ô
 		case REMOTE_CONTROL:
 #if HAVE_REFEREE_SYSTEM
 			*chassis_max_power = nav_ctrl.referee_power_limit * 0.9f + cap_data.cap_per * 100;
-//				*chassis_max_power = 120.0f;
 #else
 			*chassis_max_power = 100 + cap_data.cap_per * 100
 #endif
@@ -482,6 +513,7 @@ static void Set_Chassis_VxVy(fp32 yaw_chassis_zero_rad, fp32 *chassis_vx, fp32 *
 			// ¸Õ½øÈë¹ıµßô¤Ä£Ê½Ê±ÅĞ¶Ï¹¦ÂÊºÍ³¬µçÊÇ·ñÂú×ãÒªÇó£¬²»Âú×ã¾ÍÍ£ÏÂ£¬Ö±µ½Âú×ãÌõ¼şÔÙ×ß
 			static uint8_t last_nav_target_mode = NAV_CHASSIS_FOLLOW_GIMBAL;
 			static bool_t bumpy_force_stop_xy = FALSE;
+			static bool_t follow_gimbal_force_stop_xy = FALSE;
 
 			if (nav_ctrl.chassis_target_mode == NAV_CHASSIS_FOLLOW_GIMBAL && last_nav_target_mode == NAV_CHASSIS_ROTATE)
 			{
@@ -489,6 +521,7 @@ static void Set_Chassis_VxVy(fp32 yaw_chassis_zero_rad, fp32 *chassis_vx, fp32 *
 				{
 					bumpy_force_stop_xy = TRUE;
 				}
+				follow_gimbal_force_stop_xy = TRUE;
 			}
 			if (bumpy_force_stop_xy)
 			{
@@ -497,9 +530,20 @@ static void Set_Chassis_VxVy(fp32 yaw_chassis_zero_rad, fp32 *chassis_vx, fp32 *
 					bumpy_force_stop_xy = FALSE;
 				}
 			}
+			if (follow_gimbal_force_stop_xy && nav_ctrl.chassis_target_mode == NAV_CHASSIS_FOLLOW_GIMBAL)
+			{
+				if (my_fabsf(chassis_control.current_wz) < 50.0f) // ×ªËÙÏÂ½µµ½ãĞÖµÒÔÏÂ²ÅÄÜ×ß
+				{
+					follow_gimbal_force_stop_xy = FALSE;
+				}
+			}
+			else
+			{
+				follow_gimbal_force_stop_xy = FALSE;
+			}
 
 			last_nav_target_mode = nav_ctrl.chassis_target_mode;
-			if (bumpy_force_stop_xy)
+			if (bumpy_force_stop_xy || follow_gimbal_force_stop_xy)
 			{
 				gimbal_vx = ramp_control(gimbal_vx, 0.0f, ramp_coeff);
 				gimbal_vy = ramp_control(gimbal_vy, 0.0f, ramp_coeff);
@@ -598,7 +642,7 @@ static void Set_Rotate_Wz(fp32 *wz)
 
 			case NAV_ROTATE_TOE_ERROR:
 				target_wz = ROTATE_WZ_MAX * RAD_PER_SEC_TO_RPM; // ¸ßËÙÍÓÂİ
-				ramp_coeff = 0.2f;
+				ramp_coeff = 0.1f;
 				break;
 
 			case NAV_ROTATE_UPHILL:
@@ -615,10 +659,16 @@ static void Set_Rotate_Wz(fp32 *wz)
 			case NAV_ROTATE_NORMAL:
 				// ³£¹æµ¼º½Ä£Ê½£¬ÔÚrmucÏÂÎªÁãËÙÍÓÂİ£¬ÓĞÊ±ĞèÒª¸ÄÎªµÍËÙÍÓÂİ
 				target_wz = ROTATE_WZ_MIN * RAD_PER_SEC_TO_RPM;
-				ramp_coeff = 0.15f;
+				ramp_coeff = 0.1f;
 				break;
 			}
 		}
+	}
+
+	if (chassis_control.waiting_for_wz_slow_down)
+	{
+		target_wz = 0.0f; // ÇĞ»»¹ı³ÌÇ¿ÖÆ½«Ä¿±ê½ÇËÙ¶ÈÖÃÎª0
+		ramp_coeff = 0.05f; 
 	}
 
 	// Í³Ò»¾­¹ıĞ±ÆÂ¿ØÖÆÆ÷Êä³ö×îÖÕÄ¿±êwz

@@ -357,7 +357,7 @@ void Dial_Speed_Set(fp32 *dial_speed)
 #if HAVE_REFEREE_SYSTEM
 	if ((rc_ctrl.rc.s[1] == RC_SW_UP || (NUC_Data_Receive.small_yaw_aim != 0) || (rc_ctrl.rc.s[1] == RC_SW_MID && rc_ctrl.rc.s[0] == RC_SW_UP)) && Game_Robot_State.power_management_shooter_output == 0x01) // 判断是否要进行热量保护,快超热量了就把拨弹盘目标速度定为0一段时间
 	{
-		if ((shoot_control.current_heat_without_referee >= (Game_Robot_State.shooter_barrel_heat_limit - 10)))
+		if ((shoot_control.current_heat_without_referee >= (Game_Robot_State.shooter_barrel_heat_limit - 20)))
 		{
 			shoot_control.need_limit_heat = 1;
 		}
