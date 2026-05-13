@@ -125,9 +125,9 @@ extern "C"
 
 	/* 雷达,哨兵自主决策cmdID */
 #define SEND_TO_LIDAR 0x0202
-#define SENTRY_AUTO_SEND 0x0120
-#define LIDAR_AUTO_SEND 0x0121
-
+#define SENTRY_AUTO_SEND 0x0120 //哨兵自主决策指令的cmd_id
+#define DRONE_TO_SENTRY_DATA_CMD_ID 0x0201 // 无人机发给哨兵的数据cmd_id
+#define RADAR_TO_SENTRY_DATA_CMD_ID 0x0202 // 雷达发给哨兵的数据cmd_id
 /* UI删除操作 */
 #define UI_Delete_Invalid 0 // 空操作
 #define UI_Delete_Layer 1	// 删除图层
@@ -327,7 +327,8 @@ extern "C"
 	} radar_info_t; 
 
 	/* 0x030X --------------------------------------------------------------------*/
-	typedef __packed struct // 0x0301 机器人间通信结构体，包括数据头和数据,2026赛季数据来源为雷达
+
+	typedef __packed struct // 0x0301 机器人间通信结构体，雷达发给哨兵的数据
 	{
 		uint16_t data_cmd_id;
 		uint16_t sender_ID;
@@ -340,8 +341,17 @@ extern "C"
 		uint8_t catch_engineer;	   // 抓工程,如果要抓则发送目标区域代号,想上中央高地就发1，兑矿无敌发2
 		uint8_t bumpy_exist_enemy; // 1有人0没人，只管我方半场
 		uint8_t enemy_base_flower; // 1基地开花，0基地未开花
+	} ext_radar_to_sentry_data_t;
+
+	typedef __packed struct // 0x0301 机器人间通信结构体，无人机发给哨兵的数据
+	{
+		uint16_t data_cmd_id;
+		uint16_t sender_ID;
+		uint16_t receiver_ID;
+
+		//无人机发给哨兵的数据
 		uint8_t need_enable_power_rune; // 1需要使能量机关进入正在激活状态，0不需要使能量机关进入正在激活状态
-	} ext_student_interactive_data_t;
+	} ext_drone_to_sentry_data_t;
 
 	typedef __packed struct // 0x0301 机器人间通信 头结构体
 	{
@@ -526,7 +536,8 @@ extern "C"
 	extern radar_info_t Radar_Info; 
 
 	/* 0x030X */
-	extern ext_student_interactive_data_t Student_Interactive_Data;
+	extern ext_radar_to_sentry_data_t Radar_To_Sentry_Data;
+	extern ext_drone_to_sentry_data_t Drone_To_Sentry_Data;
 	extern ext_robot_command_t Robot_Command;
 	extern ext_client_map_command_t Client_Map_Command;
 

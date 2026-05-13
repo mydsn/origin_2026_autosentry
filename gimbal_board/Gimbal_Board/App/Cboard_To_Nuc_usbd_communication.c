@@ -157,12 +157,13 @@ void NUC_USBD_Tx(uint8_t cmdid)
 		Referee_Data_Transmit.ally_base_HP = Game_Robot_HP.ally_base_HP;
 		Referee_Data_Transmit.rfid_status = RFID_Status.rfid_status;
 		Referee_Data_Transmit.event_data = Event_Data.event_type;
-		Referee_Data_Transmit.defend_fortress = Student_Interactive_Data.defend_fortress;
-		Referee_Data_Transmit.outpost_alive = Student_Interactive_Data.outpost_alive;
-		Referee_Data_Transmit.catch_hero = Student_Interactive_Data.catch_hero;
-		Referee_Data_Transmit.catch_engineer = Student_Interactive_Data.catch_engineer;
-		Referee_Data_Transmit.bumpy_exist_enemy = Student_Interactive_Data.bumpy_exist_enemy;
-		Referee_Data_Transmit.enemy_base_flower = Student_Interactive_Data.enemy_base_flower;
+		Referee_Data_Transmit.defend_fortress = Radar_To_Sentry_Data.defend_fortress;
+		Referee_Data_Transmit.outpost_alive = Radar_To_Sentry_Data.outpost_alive;
+		Referee_Data_Transmit.catch_hero = Radar_To_Sentry_Data.catch_hero;
+		Referee_Data_Transmit.catch_engineer = Radar_To_Sentry_Data.catch_engineer;
+		Referee_Data_Transmit.bumpy_exist_enemy = Radar_To_Sentry_Data.bumpy_exist_enemy;
+		Referee_Data_Transmit.enemy_base_flower = Radar_To_Sentry_Data.enemy_base_flower;
+		Referee_Data_Transmit.need_enable_power_rune = Drone_To_Sentry_Data.need_enable_power_rune;
 		Referee_Data_Transmit.could_fire = Game_Robot_State.power_management_shooter_output;
 
 		if(Robot_Command.target_position_x == 0 && Robot_Command.target_position_y == 0)

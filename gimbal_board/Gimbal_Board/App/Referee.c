@@ -77,7 +77,8 @@ ext_sentry_info_t Sentry_Info;
 radar_info_t Radar_Info;
 
 /* 0x030X */
-ext_student_interactive_data_t Student_Interactive_Data;
+ext_radar_to_sentry_data_t Radar_To_Sentry_Data;
+ext_drone_to_sentry_data_t Drone_To_Sentry_Data;
 ext_robot_command_t Robot_Command;
 ext_client_map_command_t Client_Map_Command;
 
@@ -123,8 +124,8 @@ void Referee_StructInit(void)
 	memset(&RFID_Status, 0, sizeof(RFID_Status));
 	memset(&Ground_Robot_Position, 0, sizeof(Ground_Robot_Position));
 	memset(&Sentry_Info, 0, sizeof(Sentry_Info));
-	/* 0x030X */
-	memset(&Student_Interactive_Data, 0, sizeof(Student_Interactive_Data));
+	memset(&Radar_To_Sentry_Data, 0, sizeof(Radar_To_Sentry_Data));
+	memset(&Drone_To_Sentry_Data, 0, sizeof(Drone_To_Sentry_Data));
 	memset(&Robot_Command, 0, sizeof(Robot_Command));
 	memset(&Client_Map_Command, 0, sizeof(Client_Map_Command));
 }
@@ -297,8 +298,37 @@ void Referee_SolveFifoData(uint8_t *frame)
 		memcpy(&Sentry_Info, frame + index, sizeof(ext_sentry_info_t));
 		break;
 	case STUDENT_INTERACTIVE_DATA_CMD_ID:
-		memcpy(&Student_Interactive_Data, frame + index, sizeof(ext_student_interactive_data_t));
+	{
+		uint16_t data_cmd_id = *(uint16_t *)(frame + index); // 读取数据段内的子命令码data_cmd_id
+		uint16_t sender_id = *(uint16_t *)(frame + index + 2); // 偏移2字节跳过data_cmd_id，读取sender_ID
+		uint16_t receiver_id = *(uint16_t *)(frame + index + 4); // 偏移4字节读取receiver_ID
+
+		// 判断自身阵营，红方ID通常小于100，蓝方ID通常大于100 (哨兵是7或107)
+		uint8_t is_red_team = (Game_Robot_State.robot_id < 100) ? 1 : 0;
+		uint8_t is_blue_team = !is_red_team;
+
+		// 必须判断接收者是自己
+		if (receiver_id == Game_Robot_State.robot_id)
+		{
+			if (data_cmd_id == RADAR_TO_SENTRY_DATA_CMD_ID) 
+			{
+				// 只接收己方雷达数据 (红方雷达=9, 蓝方雷达=109)
+				if ((is_red_team && sender_id == 9) || (is_blue_team && sender_id == 109))
+				{
+					memcpy(&Radar_To_Sentry_Data, frame + index, sizeof(ext_radar_to_sentry_data_t));
+				}
+			}
+			else if (data_cmd_id == DRONE_TO_SENTRY_DATA_CMD_ID) 
+			{
+				// 只接收己方无人机数据 (红方无人机=6, 蓝方无人机=106)
+				if ((is_red_team && sender_id == 6) || (is_blue_team && sender_id == 106))
+				{
+					memcpy(&Drone_To_Sentry_Data, frame + index, sizeof(ext_drone_to_sentry_data_t));
+				}
+			}
+		}
 		break;
+	}
 	case ROBOT_COMMAND_CMD_ID:
 		memcpy(&Robot_Command, frame + index, sizeof(ext_robot_command_t));
 		break;
@@ -340,7 +370,8 @@ void Sentry_PushUp_Cmd(Sentry_Auto_Cmd_Send_t *Sentry_Auto_Cmd, uint8_t RobotID)
 	memset(&Sentry_Auto_Cmd->sentry_cmd, 0, sizeof(sentry_cmd_t));
 	Sentry_Auto_Cmd->sentry_cmd.ensure_revive = Sentry_Info.can_revive_free;	// 可以复活的话请求复活
 	Sentry_Auto_Cmd->sentry_cmd.change_sentry_mode = toe_is_error(NUC_DATA_TOE) ? MOVE_MODE : NUC_Data_Receive.target_mode;
-	Sentry_Auto_Cmd->sentry_cmd.enable_power_rune = Student_Interactive_Data.need_enable_power_rune;
+	// 根据无人机的数据判断是否需要激活能量机关
+	Sentry_Auto_Cmd->sentry_cmd.enable_power_rune = Drone_To_Sentry_Data.need_enable_power_rune;
 	//    if (!Buff_Musk.remaining_energy)
 	//        Sentry_Auto_Cmd->sentry_cmd.change_sentry_mode = ATTACK_MODE;
 	//    else
