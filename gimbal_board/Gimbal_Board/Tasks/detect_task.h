@@ -67,6 +67,7 @@ enum errorList
     BOARD_GYRO_TOE,
     BOARD_ACCEL_TOE,
     NUC_DATA_TOE,
+    RADAR_DATA_TOE,
     ERROR_LIST_LENGHT,
 };
 

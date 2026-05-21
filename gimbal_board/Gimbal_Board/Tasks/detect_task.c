@@ -54,8 +54,10 @@
 #include "cmsis_os.h"
 #include "Cboard_To_Nuc_usbd_communication.h"
 #include "string.h"
+#include "Referee.h"
 
 static void NUC_Data_Solve_Lost(void);
+static void Radar_Data_Solve_Lost(void);
 
 static void NUC_Data_Solve_Lost(void)
 {
@@ -63,6 +65,14 @@ static void NUC_Data_Solve_Lost(void)
     {
         memset(&NUC_Data_Receive, 0, sizeof(NUC_Data_Receive));
         NUC_Data_Receive.chassis_mode = 2; //设为陀螺模式
+    }
+}
+
+static void Radar_Data_Solve_Lost(void)
+{
+    if (toe_is_error(RADAR_DATA_TOE))
+    {
+        memset(&Radar_To_Sentry_Data, 0, sizeof(Radar_To_Sentry_Data));
     }
 }
 
@@ -276,6 +286,7 @@ static void detect_init(uint32_t time)
             {7, 3, 7},     // board gyro
             {7, 5, 7},     // board accel
             {50, 50, 14},     // NUC下发数据
+            {2000, 500, 14},     // 雷达下发数据
         };
 
     for (uint8_t i = 0; i < ERROR_LIST_LENGHT; i++)
@@ -284,7 +295,20 @@ static void detect_init(uint32_t time)
         error_list[i].set_online_time = set_item[i][1];
         error_list[i].priority = set_item[i][2];
         error_list[i].data_is_error_fun = NULL;
-        error_list[i].solve_lost_fun = (i == NUC_DATA_TOE ? NUC_Data_Solve_Lost : NULL);
+        
+        if (i == NUC_DATA_TOE)
+        {
+            error_list[i].solve_lost_fun = NUC_Data_Solve_Lost;
+        }
+        else if (i == RADAR_DATA_TOE)
+        {
+            error_list[i].solve_lost_fun = Radar_Data_Solve_Lost;
+        }
+        else
+        {
+            error_list[i].solve_lost_fun = NULL;
+        }
+        
         error_list[i].solve_data_error_fun = NULL;
 
         error_list[i].enable = 1;

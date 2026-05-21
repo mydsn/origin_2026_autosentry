@@ -152,7 +152,7 @@ void NUC_USBD_Tx(uint8_t cmdid)
 
 		//全局信息
 		Referee_Data_Transmit.stage_remain_time = Game_Status.stage_remain_time;
-	  Referee_Data_Transmit.game_progress = Game_Status.game_progress;
+	  	Referee_Data_Transmit.game_progress = Game_Status.game_progress;
 		Referee_Data_Transmit.ally_outpost_HP = Game_Robot_HP.ally_outpost_HP;
 		Referee_Data_Transmit.ally_base_HP = Game_Robot_HP.ally_base_HP;
 		Referee_Data_Transmit.rfid_status = RFID_Status.rfid_status;

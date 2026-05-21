@@ -252,8 +252,24 @@ void Referee_SolveFifoData(uint8_t *frame)
 	switch (cmd_id)
 	{
 	case GAME_STATE_CMD_ID:
+	{
+		static uint8_t last_game_progress = 0;
 		memcpy(&Game_Status, frame + index, sizeof(ext_game_status_t));
+		
+		// 比赛刚开始时检查
+		if (Game_Status.game_progress == Game_Progress_Battle && last_game_progress != Game_Progress_Battle)
+		{
+			memset(&Robot_Command, 0, sizeof(ext_robot_command_t));
+		}
+		// 比赛结束时置零
+		else if (Game_Status.game_progress == Game_Progress_Calculate && last_game_progress == Game_Progress_Battle)
+		{
+			memset(&Robot_Command, 0, sizeof(ext_robot_command_t));
+		}
+		
+		last_game_progress = Game_Status.game_progress;
 		break;
+	}
 	case GAME_RESULT_CMD_ID:
 		memcpy(&Game_Result, frame + index, sizeof(ext_game_result_t));
 		break;
@@ -316,13 +332,18 @@ void Referee_SolveFifoData(uint8_t *frame)
 				if ((is_red_team && sender_id == 9) || (is_blue_team && sender_id == 109))
 				{
 					memcpy(&Radar_To_Sentry_Data, frame + index, sizeof(ext_radar_to_sentry_data_t));
+					detect_hook(RADAR_DATA_TOE);
 				}
 			}
 		}
 		break;
 	}
 	case ROBOT_COMMAND_CMD_ID:
-		memcpy(&Robot_Command, frame + index, sizeof(ext_robot_command_t));
+		// 只有在比赛开始的时候才允许修改这个结构体
+		if (Game_Status.game_progress == Game_Progress_Battle)
+		{
+			memcpy(&Robot_Command, frame + index, sizeof(ext_robot_command_t));
+		}
 		break;
 	case CLIENT_MAP_COMMAND_CMD_ID:
 		memcpy(&Client_Map_Command, frame + index, sizeof(ext_client_map_command_t));
