@@ -22,7 +22,7 @@
 #include "Chassis_Power_Limiter.h"
 
 #define HAVE_REFEREE_SYSTEM 1 // 哨兵当前是否安装裁判系统
-#define COMPETE_MODE	1  // 是否比赛模式
+#define COMPETE_MODE 1  // 是否比赛模式
 /*******************************底盘控制相关结构体和枚举体***********************************/
 typedef enum
 {

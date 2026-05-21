@@ -217,7 +217,27 @@ static gimbal_mode_t Gimbal_Mode_Update()
     bool_t check_nav_rush_home = (NUC_Data_Receive.middle_hit_home == 1 && rc_ctrl.rc.s[1] != RC_SW_DOWN);
     bool_t check_rc_ctrl = (rc_ctrl.rc.s[1] == RC_SW_MID);
     bool_t check_nav_seek_enemy = (rc_ctrl.rc.s[1] == RC_SW_UP);
-    bool_t check_safe = ((rc_ctrl.rc.s[1] == RC_SW_DOWN) || toe_is_error(DBUS_TOE) || toe_is_error(DM_IMU_TOE) || toe_is_error(BOARD_ACCEL_TOE) || toe_is_error(BOARD_GYRO_TOE));
+    
+    static uint32_t rollover_start_time = 0;
+    static bool_t is_rollover = FALSE;
+    if (my_fabsf(INS.Roll) > 80.0f)
+    {
+        if (rollover_start_time == 0)
+        {
+            rollover_start_time = xTaskGetTickCount();
+        }
+        else if (xTaskGetTickCount() - rollover_start_time > pdMS_TO_TICKS(500))
+        {
+            is_rollover = TRUE;
+        }
+    }
+    else
+    {
+        rollover_start_time = 0;
+        is_rollover = FALSE;
+    }
+
+    bool_t check_safe = ((rc_ctrl.rc.s[1] == RC_SW_DOWN) || toe_is_error(DBUS_TOE) || toe_is_error(DM_IMU_TOE) || toe_is_error(BOARD_ACCEL_TOE) || toe_is_error(BOARD_GYRO_TOE) || is_rollover);
 
     if (check_safe)
     {
