@@ -159,10 +159,10 @@ void NUC_USBD_Tx(uint8_t cmdid)
 		Referee_Data_Transmit.event_data = Event_Data.event_type;
 		Referee_Data_Transmit.defend_fortress = Radar_To_Sentry_Data.defend_fortress;
 		Referee_Data_Transmit.outpost_alive = Radar_To_Sentry_Data.outpost_alive;
-		Referee_Data_Transmit.catch_hero = Radar_To_Sentry_Data.catch_hero;
-		Referee_Data_Transmit.catch_engineer = Radar_To_Sentry_Data.catch_engineer;
-		Referee_Data_Transmit.bumpy_exist_enemy = Radar_To_Sentry_Data.bumpy_exist_enemy;
-		Referee_Data_Transmit.enemy_base_flower = Radar_To_Sentry_Data.enemy_base_flower;
+		Referee_Data_Transmit.catch_hero = 0;
+		Referee_Data_Transmit.catch_engineer = 0;
+		Referee_Data_Transmit.bumpy_exist_enemy = 0;
+		Referee_Data_Transmit.enemy_base_flower = 0;
 		Referee_Data_Transmit.could_fire = Game_Robot_State.power_management_shooter_output;
 
 		if(Robot_Command.target_position_x == 0 && Robot_Command.target_position_y == 0)
